@@ -7,6 +7,8 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(pacman, party, psych, rio, tidyverse)
 tax_data <- read_excel("Taxpayer Data Consolidated.xlsx")
 
+summary(tax_data)
+
 head(tax_data)
 #DATA CLEANING FOR THE DATE
 
@@ -117,3 +119,42 @@ ggplot(tax_data, aes(x = Taxhead)) +
 ggplot(tax_data, aes(x = tax_data$`Amount Due`, y = tax_data$`Amount Paid`)) +
   geom_point() +
   geom_smooth(method = "lm")
+
+
+# Create a new column "Year" that extracts the year from the "Return. Date" column
+tax_data$Year <- format(as.Date(tax_data$`Return. Date`, format = "%d.%m.%Y"), "%Y")
+
+# Create a summary data frame that shows the total count of compliant and non-compliant taxpayers by year
+compliance_summary <- aggregate(Compliance ~ Year + Compliance, data = tax_data, FUN = length)
+head(compliance_summary) 
+# Create a line graph that shows the compliance levels by year
+compliance_summary$Year <- as.factor(compliance_summary$Year)
+
+# Create line graph
+ggplot(data = compliance_summary, aes(x = Year, y = Compliance, group = 1)) +
+  geom_line() +
+  labs(x = "Year", y = "Compliance Level", title = "Compliance Levels by Year")
+
+
+
+
+# Filter data for records where return date > due date and amount due = 0
+filtered_data <- tax_data %>% filter(`Return. Date` > `Due Date` & `Amount Due` == 0)
+
+# Plot compliance levels by return date
+ggplot(data = filtered_data, aes(x = `Return. Date`, fill = Compliance)) +
+  geom_bar() +
+  labs(x = "Return Date", y = "Count", title = "Compliance Levels by Return Date") +
+  theme(legend.position = "bottom")
+
+# Plot compliance levels by due date
+ggplot(data = filtered_data, aes(x = `Due Date`, fill = Compliance)) +
+  geom_bar() +
+  labs(x = "Due Date", y = "Count", title = "Compliance Levels by Due Date") +
+  theme(legend.position = "bottom")
+
+# Plot compliance levels by return date and due date
+ggplot(data = filtered_data, aes(x = `Return. Date`, y = `Due Date`, color = Compliance)) +
+  geom_point() +
+  labs(x = "Return Date", y = "Due Date", title = "Compliance Levels by Return Date and Due Date")
+
